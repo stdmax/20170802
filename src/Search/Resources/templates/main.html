@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>{{title}}</title>
+	<style type="text/css">
+		body {
+			font: normal 9pt tahoma;
+			margin: 12pt 10%;
+		}
+		table {
+			width: 100%;
+			border-collapse: collapse;
+			border-spacing: 0;
+		}
+		table tr th:last-child,
+		table tr td:last-child {
+			width: 90%;
+		}
+		table td {
+			border-bottom: solid 1px #eeeeee;
+			vertical-align: top;
+			padding: 2pt 6pt;
+		}
+		table th {
+			color: #ffffff;
+			background: #555555;
+		}
+		#result .link {
+			font-size: larger;
+		}
+		.title {
+			font-size: 24pt;
+			padding-bottom: 12pt;
+		}
+		.error {
+			font-weight: bold;
+			color: #ff0000;
+		}
+	</style>
+</head>
+<body>
+<div class="title">
+	{{title}} "{{search_service.name}}"
+</div>
+<div class="content">
+	<form action="javascript:search.search()">
+		<label>
+			<input type="text" name="query" />
+		</label>
+		<input type="submit" value="search" />
+	</form>
+
+	<hr />
+	<table>
+		<thead>
+			<tr>
+				<th>number</th>
+				<th>url</th>
+			</tr>
+		</thead>
+		<tbody id="result">
+			<tr>
+				<td></td>
+				<td>...</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+
+
+<script>
+	var searchApp = function () {
+		var query = document.forms[0].elements.query,
+			output = document.getElementById('result'),
+			xhr = new XMLHttpRequest();
+
+		return {
+			'showResults': function (rows) {
+				var html = '',
+					index;
+				if (0 !== rows.length) {
+					for (index = 0; index < rows.length; index++) {
+						html += '<tr><td>' + (index + 1) + '.</td>';
+						html += '<td><a class="link" href="' + rows[index].url + '">' + rows[index].text + '</a>';
+						html += '<div>' + rows[index].description + '</div></td></tr>';
+					}
+				} else {
+					html = '<tr><td></td><td>0 results</td></tr>';
+				}
+				output.innerHTML = html;
+			},
+			'clearResults': function () {
+				output.innerHTML = '<tr><td></td><td>Loading ..</td></tr>';
+			},
+			'showError': function (error) {
+				output.innerHTML = '<tr><td></td><td class="error">' + error + '</td></tr>';
+			},
+			'search': function () {
+				var self = this;
+
+				xhr.onreadystatechange = function () {
+					if (4 === this.readyState && 200 === this.status) {
+						data = JSON.parse(this.responseText);
+						if (data.error) {
+							self.showError(data.error);
+						}
+						if (data.status) {
+							self.showResults(data.result);
+						}
+					}
+				};
+				xhr.open('GET', '?action=search&query=' + encodeURIComponent(query.value), true);
+				xhr.send();
+				this.clearResults();
+			}
+		};
+	};
+
+	search = searchApp();
+</script>
+
+
+</body>
+</html>
